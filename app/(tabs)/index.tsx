@@ -12,12 +12,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Plus, Search, Filter, Package, Calendar, TriangleAlert as AlertTriangle, LogOut, X, Save } from 'lucide-react-native';
+import { Plus, Search, Filter, Package, Calendar, TriangleAlert as AlertTriangle, LogOut, X, Save, Camera } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHousehold } from '@/contexts/HouseholdContext';
 import { useRouter } from 'expo-router';
 import { pantryService, activityService } from '@/services/firestore';
 import { PantryItem } from '@/types';
+import CaptureInventoryModal from '@/components/CaptureInventoryModal';
 
 export default function PantryScreen() {
   const { user, signOut } = useAuth();
@@ -28,6 +29,7 @@ export default function PantryScreen() {
   const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showCaptureModal, setShowCaptureModal] = useState(false);
   const [editingItem, setEditingItem] = useState<PantryItem | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -290,6 +292,42 @@ export default function PantryScreen() {
     );
   };
 
+  const handleItemsDetected = async (detectedItems: any[]) => {
+    if (!currentHousehold || !user) return;
+
+    try {
+      // Add all detected items to the pantry
+      for (const item of detectedItems) {
+        const itemData = {
+          name: item.name,
+          category: item.category,
+          quantity: item.quantity,
+          unit: item.unit,
+          householdId: currentHousehold.id,
+          addedBy: user.id,
+          lowStockThreshold: 1,
+        };
+
+        await pantryService.addItem(itemData as Omit<PantryItem, 'id' | 'createdAt' | 'updatedAt'>);
+      }
+
+      // Add activity log
+      await activityService.addActivity({
+        householdId: currentHousehold.id,
+        type: 'pantry_add',
+        userId: user.id,
+        userName: user.displayName,
+        description: `Added ${detectedItems.length} items via AI capture`,
+        metadata: { itemCount: detectedItems.length },
+      });
+
+      Alert.alert('Success', `Added ${detectedItems.length} items to your pantry!`);
+    } catch (error) {
+      console.error('Error adding detected items:', error);
+      Alert.alert('Error', 'Failed to add some items to your pantry');
+    }
+  };
+
   if (!currentHousehold) {
     return (
       <SafeAreaView style={styles.container}>
@@ -470,10 +508,18 @@ export default function PantryScreen() {
           )}
         </ScrollView>
 
-        {/* Add Button */}
-        <TouchableOpacity style={styles.addButton} onPress={openAddModal}>
-          <Plus color="#ffffff" size={24} />
-        </TouchableOpacity>
+        {/* Floating Action Buttons */}
+        <View style={styles.fabContainer}>
+          <TouchableOpacity 
+            style={[styles.fabButton, styles.captureButton]} 
+            onPress={() => setShowCaptureModal(true)}
+          >
+            <Camera color="#ffffff" size={20} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.fabButton} onPress={openAddModal}>
+            <Plus color="#ffffff" size={24} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Add/Edit Modal */}
@@ -610,6 +656,14 @@ export default function PantryScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* Capture Inventory Modal */}
+      <CaptureInventoryModal
+        visible={showCaptureModal}
+        onClose={() => setShowCaptureModal(false)}
+        onItemsDetected={handleItemsDetected}
+        householdId={currentHousehold.id}
+      />
     </SafeAreaView>
   );
 }
@@ -833,10 +887,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
-  addButton: {
+  fabContainer: {
     position: 'absolute',
     bottom: 20,
     right: 20,
+    flexDirection: 'column',
+    gap: 12,
+  },
+  fabButton: {
     width: 56,
     height: 56,
     backgroundColor: '#667eea',
@@ -848,6 +906,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  captureButton: {
+    backgroundColor: '#27ae60',
   },
   modalContainer: {
     flex: 1,

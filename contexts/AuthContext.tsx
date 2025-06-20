@@ -97,7 +97,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('✅ Sign in successful');
     } catch (error: any) {
       console.error('❌ Sign in error:', error.message);
-      throw new Error(error.message);
+      
+      // Provide user-friendly error messages
+      let userMessage = 'Sign in failed. Please try again.';
+      
+      if (error.code === 'auth/invalid-credential') {
+        userMessage = 'Invalid email or password. Please check your credentials and try again.';
+      } else if (error.code === 'auth/user-not-found') {
+        userMessage = 'No account found with this email address.';
+      } else if (error.code === 'auth/wrong-password') {
+        userMessage = 'Incorrect password. Please try again.';
+      } else if (error.code === 'auth/too-many-requests') {
+        userMessage = 'Too many failed attempts. Please try again later.';
+      } else if (error.code === 'auth/network-request-failed') {
+        userMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      throw new Error(userMessage);
     }
   };
 
@@ -123,7 +139,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('✅ Account creation complete');
     } catch (error: any) {
       console.error('❌ Sign up error:', error.message);
-      throw new Error(error.message);
+      
+      // Provide user-friendly error messages
+      let userMessage = 'Account creation failed. Please try again.';
+      
+      if (error.code === 'auth/email-already-in-use') {
+        userMessage = 'An account with this email already exists. Please sign in instead.';
+      } else if (error.code === 'auth/weak-password') {
+        userMessage = 'Password is too weak. Please choose a stronger password.';
+      } else if (error.code === 'auth/invalid-email') {
+        userMessage = 'Invalid email address. Please enter a valid email.';
+      } else if (error.code === 'auth/network-request-failed') {
+        userMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      throw new Error(userMessage);
     }
   };
 

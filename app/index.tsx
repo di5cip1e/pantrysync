@@ -13,39 +13,58 @@ export default function Index() {
     loading: householdLoading, 
     error: householdError,
     hasAttemptedLoad,
-    currentHousehold
+    currentHousehold,
+    loadHouseholds
   } = useHousehold();
   const router = useRouter();
   const [forceLogoutLoading, setForceLogoutLoading] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
+  const [navigationAttempted, setNavigationAttempted] = useState(false);
 
   useEffect(() => {
-    // Set debug mode after 3 seconds if still loading
+    // Set debug mode after 5 seconds if still loading
     const debugTimer = setTimeout(() => {
-      if (authLoading) {
+      if (authLoading || householdLoading) {
         setDebugMode(true);
       }
-    }, 3000);
+    }, 5000);
 
     return () => clearTimeout(debugTimer);
-  }, [authLoading]);
+  }, [authLoading, householdLoading]);
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && !navigationAttempted) {
+      setNavigationAttempted(true);
+      
       if (!user) {
         console.log('🔄 No user, redirecting to auth');
         router.replace('/auth');
-      } else if (currentHousehold) {
-        // User has a current household - go to app
-        console.log('✅ User has current household, redirecting to app');
-        router.replace('/(tabs)');
       } else {
-        // User needs to set up or load household
-        console.log('🏠 No current household, redirecting to setup');
-        router.replace('/household-setup');
+        // User is authenticated, check household status
+        if (currentHousehold) {
+          // User has a current household - go to app
+          console.log('✅ User has current household, redirecting to app');
+          router.replace('/(tabs)');
+        } else if (hasAttemptedLoad && households.length > 0) {
+          // User has households but no current one selected
+          console.log('🏠 User has households, redirecting to app');
+          router.replace('/(tabs)');
+        } else if (!hasAttemptedLoad && !householdLoading) {
+          // Haven't tried loading households yet, try to load them
+          console.log('🔄 Attempting to load households...');
+          loadHouseholds().catch(() => {
+            // If loading fails, go to setup
+            console.log('🏠 Failed to load households, redirecting to setup');
+            router.replace('/household-setup');
+          });
+        } else if (hasAttemptedLoad && households.length === 0) {
+          // User needs to set up or join a household
+          console.log('🏠 No households found, redirecting to setup');
+          router.replace('/household-setup');
+        }
       }
     }
-  }, [user, authLoading, currentHousehold, router]);
+  }, [user, authLoading, currentHousehold, households, hasAttemptedLoad, householdLoading, navigationAttempted, router, loadHouseholds]);
 
   const handleForceLogout = async () => {
     try {
@@ -59,10 +78,12 @@ export default function Index() {
       }
       
       await signOut();
+      setNavigationAttempted(false); // Reset navigation flag
       router.replace('/auth');
     } catch (error) {
       console.error('❌ Force logout error:', error);
       // Even if signOut fails, try to navigate anyway
+      setNavigationAttempted(false);
       router.replace('/auth');
     } finally {
       setForceLogoutLoading(false);
@@ -71,12 +92,20 @@ export default function Index() {
 
   const handleGoToAuth = () => {
     console.log('🔄 Manual navigation to auth page');
+    setNavigationAttempted(false);
     router.replace('/auth');
   };
 
   const handleGoToSetup = () => {
     console.log('🏠 Manual navigation to household setup');
+    setNavigationAttempted(false);
     router.replace('/household-setup');
+  };
+
+  const handleGoToApp = () => {
+    console.log('📱 Manual navigation to app');
+    setNavigationAttempted(false);
+    router.replace('/(tabs)');
   };
 
   return (
@@ -89,13 +118,17 @@ export default function Index() {
         <Text style={styles.title}>PantrySync</Text>
         <Text style={styles.subtitle}>Sync your household essentials</Text>
         
-        {authLoading && !debugMode ? (
-          <View>
+        {/* Show loading state */}
+        {(authLoading || householdLoading) && !debugMode ? (
+          <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#ffffff" style={styles.loader} />
-            <Text style={styles.loadingText}>Loading...</Text>
+            <Text style={styles.loadingText}>
+              {authLoading ? 'Authenticating...' : 'Loading households...'}
+            </Text>
           </View>
         ) : null}
         
+        {/* Show debug/manual navigation options */}
         {(debugMode || householdError) ? (
           <View style={styles.navigationContainer}>
             {householdError ? (
@@ -103,7 +136,7 @@ export default function Index() {
                 <AlertTriangle color="#ffffff" size={32} style={styles.errorIcon} />
                 <Text style={styles.errorTitle}>Navigation Help</Text>
                 <Text style={styles.errorMessage}>
-                  Choose where you'd like to go:
+                  There was an issue loading your data. Choose where you'd like to go:
                 </Text>
               </View>
             ) : null}
@@ -111,7 +144,9 @@ export default function Index() {
             {debugMode ? (
               <View>
                 <Text style={styles.debugTitle}>Manual Navigation</Text>
-                <Text style={styles.debugText}>Loading is taking longer than expected. You can navigate manually:</Text>
+                <Text style={styles.debugText}>
+                  Loading is taking longer than expected. You can navigate manually:
+                </Text>
               </View>
             ) : null}
 
@@ -129,6 +164,15 @@ export default function Index() {
               >
                 <Text style={styles.actionButtonText}>Household Setup</Text>
               </TouchableOpacity>
+
+              {user && (
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.appButton]}
+                  onPress={handleGoToApp}
+                >
+                  <Text style={styles.actionButtonText}>Go to App</Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 style={[styles.actionButton, styles.logoutButton]}
@@ -175,13 +219,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 40,
   },
-  loader: {
+  loadingContainer: {
+    alignItems: 'center',
     marginTop: 20,
+  },
+  loader: {
+    marginBottom: 16,
   },
   loadingText: {
     fontSize: 16,
     color: '#ffffff',
-    marginTop: 16,
     opacity: 0.9,
   },
   navigationContainer: {
@@ -244,6 +291,9 @@ const styles = StyleSheet.create({
   },
   setupButton: {
     backgroundColor: '#667eea',
+  },
+  appButton: {
+    backgroundColor: '#3498db',
   },
   logoutButton: {
     backgroundColor: '#e74c3c',

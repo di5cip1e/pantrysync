@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'expo-router';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react-native';
 
 export default function AuthScreen() {
@@ -24,10 +25,24 @@ export default function AuthScreen() {
   const [error, setError] = useState('');
 
   const { signIn, signUp } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async () => {
     if (!email || !password || (isSignUp && !displayName)) {
       setError('Please fill in all fields');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    // Basic password validation
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
       return;
     }
 
@@ -36,15 +51,26 @@ export default function AuthScreen() {
 
     try {
       if (isSignUp) {
-        await signUp(email, password, displayName);
+        await signUp(email.trim(), password, displayName.trim());
+        // After successful signup, user will be automatically signed in
+        // and redirected by the auth state change in index.tsx
       } else {
-        await signIn(email, password);
+        await signIn(email.trim(), password);
+        // After successful signin, user will be redirected by the auth state change
       }
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const switchMode = () => {
+    setIsSignUp(!isSignUp);
+    setError('');
+    setEmail('');
+    setPassword('');
+    setDisplayName('');
   };
 
   return (
@@ -71,6 +97,7 @@ export default function AuthScreen() {
                   value={displayName}
                   onChangeText={setDisplayName}
                   autoCapitalize="words"
+                  autoComplete="name"
                 />
               </View>
             )}
@@ -84,6 +111,8 @@ export default function AuthScreen() {
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoComplete="email"
+                autoCorrect={false}
               />
             </View>
 
@@ -95,6 +124,7 @@ export default function AuthScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                autoComplete={isSignUp ? "new-password" : "current-password"}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
@@ -108,7 +138,11 @@ export default function AuthScreen() {
               </TouchableOpacity>
             </View>
 
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            {error ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
 
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
@@ -122,10 +156,8 @@ export default function AuthScreen() {
 
             <TouchableOpacity
               style={styles.switchButton}
-              onPress={() => {
-                setIsSignUp(!isSignUp);
-                setError('');
-              }}
+              onPress={switchMode}
+              disabled={loading}
             >
               <Text style={styles.switchText}>
                 {isSignUp
@@ -133,6 +165,13 @@ export default function AuthScreen() {
                   : "Don't have an account? Sign Up"}
               </Text>
             </TouchableOpacity>
+
+            {/* Demo credentials for testing */}
+            <View style={styles.demoContainer}>
+              <Text style={styles.demoTitle}>Demo Credentials</Text>
+              <Text style={styles.demoText}>Email: demo@pantrysync.com</Text>
+              <Text style={styles.demoText}>Password: demo123</Text>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -151,6 +190,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 20,
+    paddingVertical: 40,
   },
   header: {
     alignItems: 'center',
@@ -188,6 +228,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 16,
     height: 56,
+    borderWidth: 1,
+    borderColor: '#e1e1e1',
   },
   inputIcon: {
     marginRight: 12,
@@ -199,6 +241,19 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     padding: 4,
+  },
+  errorContainer: {
+    backgroundColor: '#ffeaea',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#e74c3c',
+  },
+  errorText: {
+    color: '#e74c3c',
+    fontSize: 14,
+    lineHeight: 20,
   },
   button: {
     backgroundColor: '#667eea',
@@ -225,10 +280,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  errorText: {
-    color: '#e74c3c',
+  demoContainer: {
+    marginTop: 24,
+    padding: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e1e1e1',
+  },
+  demoTitle: {
     fontSize: 14,
-    marginBottom: 16,
-    textAlign: 'center',
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  demoText: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
   },
 });
