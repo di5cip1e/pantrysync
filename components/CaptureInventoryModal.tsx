@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { X, Camera, ImageIcon, Check, AlertCircle, Loader } from 'lucide-react-native';
+import { X, Camera, Image as ImageIcon, Check, CircleAlert as AlertCircle, Loader } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface DetectedItem {
