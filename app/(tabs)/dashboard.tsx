@@ -9,18 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Package, 
-  ShoppingCart, 
-  Users, 
-  Calendar,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Activity
-} from 'lucide-react-native';
+import { ChartBar as BarChart3, TrendingUp, Package, ShoppingCart, Users, Calendar, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, Activity } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHousehold } from '@/contexts/HouseholdContext';
 
