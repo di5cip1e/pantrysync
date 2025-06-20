@@ -1,0 +1,76 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserId() {
+      return request.auth.uid;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && getUserId() == userId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      allow read: if isAuthenticated(); // Allow reading other users' basic info for household features
+    }
+
+    // Households collection
+    match /households/{householdId} {
+      // Allow reading households only if user is a member (using memberUserIds array)
+      // Added check to ensure memberUserIds is a list before checking membership
+      allow read: if isAuthenticated() && 
+        resource.data.memberUserIds is list &&
+        getUserId() in resource.data.memberUserIds;
+      
+      // Allow creating households
+      allow create: if isAuthenticated() && 
+        request.resource.data.createdBy == getUserId() &&
+        getUserId() in request.resource.data.memberUserIds;
+      
+      // Allow updating households if user is a member
+      allow update: if isAuthenticated() && 
+        (
+          // Allow if user is already a member (for admin actions)
+          (resource.data.memberUserIds is list && getUserId() in resource.data.memberUserIds) ||
+          // Allow if user is joining via invite code
+          (
+            resource.data.inviteCode == request.resource.data.inviteCode &&
+            request.resource.data.memberUserIds.size() == resource.data.memberUserIds.size() + 1 &&
+            getUserId() in request.resource.data.memberUserIds
+          )
+        );
+      
+      // Allow deleting if user created the household
+      allow delete: if isAuthenticated() && 
+        resource.data.createdBy == getUserId();
+    }
+
+    // Pantry Items collection
+    match /pantryItems/{itemId} {
+      allow read, create, update, delete: if isAuthenticated();
+    }
+
+    // Shopping Lists collection
+    match /shoppingLists/{listId} {
+      allow read, create, update, delete: if isAuthenticated();
+    }
+
+    // Activities collection (read-only for members, write for system)
+    match /activities/{activityId} {
+      allow read, create: if isAuthenticated();
+      // Activities are immutable - no updates or deletes allowed
+    }
+
+    // Deny all other requests
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

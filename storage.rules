@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserId() {
+      return request.auth.uid;
+    }
+    
+    function isValidImageUpload() {
+      return request.resource.size < 5 * 1024 * 1024 && // 5MB limit
+             request.resource.contentType.matches('image/.*');
+    }
+
+    // User profile images
+    match /users/{userId}/profile/{fileName} {
+      allow read: if true; // Profile images can be publicly readable
+      allow write: if isAuthenticated() && 
+        getUserId() == userId &&
+        isValidImageUpload();
+    }
+    
+    // Pantry item images
+    match /households/{householdId}/pantry/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidImageUpload();
+    }
+    
+    // Shopping list item images
+    match /households/{householdId}/shopping/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidImageUpload();
+    }
+    
+    // Deny all other requests
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
