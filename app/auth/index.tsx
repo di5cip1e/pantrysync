@@ -202,11 +202,13 @@ export default function AuthScreen() {
 
             {/* Demo credentials info */}
             <View style={styles.infoContainer}>
-              <Text style={styles.infoTitle}>Demo Credentials</Text>
-              <Text style={styles.infoText}>Email: demo@pantrysync.com</Text>
-              <Text style={styles.infoText}>Password: demo123</Text>
+              <Text style={styles.infoTitle}>✨ Demo Features</Text>
+              <Text style={styles.infoText}>• Real-time pantry management</Text>
+              <Text style={styles.infoText}>• Household collaboration</Text>
+              <Text style={styles.infoText}>• Smart shopping lists</Text>
+              <Text style={styles.infoText}>• Activity tracking</Text>
               <Text style={styles.infoSubtext}>
-                Use these credentials to explore the app features
+                Experience all features with the demo account
               </Text>
             </View>
           </View>
@@ -367,7 +369,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginBottom: 4,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   infoSubtext: {
     fontSize: 12,
