@@ -13,7 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
-import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react-native';
+import { Mail, Lock, User, Eye, EyeOff, Zap, Package, Users, Activity } from 'lucide-react-native';
 
 export default function AuthScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -71,11 +71,15 @@ export default function AuthScreen() {
     setDisplayName('Demo User');
     setIsSignUp(false);
     setError('');
+    setLoading(true);
     
-    // Small delay to show the form update
-    setTimeout(() => {
-      handleSubmit();
-    }, 100);
+    try {
+      await signIn('demo@pantrysync.com', 'demo123');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const switchMode = () => {
@@ -107,12 +111,13 @@ export default function AuthScreen() {
           <View style={styles.form}>
             {/* Demo Login Button */}
             <TouchableOpacity
-              style={styles.demoButton}
+              style={[styles.demoButton, loading && styles.buttonDisabled]}
               onPress={handleDemoLogin}
               disabled={loading}
             >
+              <Zap color="#ffffff" size={20} />
               <Text style={styles.demoButtonText}>
-                🚀 Use Demo Account
+                {loading ? 'Signing in...' : '🚀 Try Demo Account'}
               </Text>
             </TouchableOpacity>
 
@@ -200,15 +205,29 @@ export default function AuthScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Demo credentials info */}
-            <View style={styles.infoContainer}>
-              <Text style={styles.infoTitle}>✨ Demo Features</Text>
-              <Text style={styles.infoText}>• Real-time pantry management</Text>
-              <Text style={styles.infoText}>• Household collaboration</Text>
-              <Text style={styles.infoText}>• Smart shopping lists</Text>
-              <Text style={styles.infoText}>• Activity tracking</Text>
-              <Text style={styles.infoSubtext}>
-                Experience all features with the demo account
+            {/* Features showcase */}
+            <View style={styles.featuresContainer}>
+              <Text style={styles.featuresTitle}>✨ What you'll get</Text>
+              
+              <View style={styles.featuresList}>
+                <View style={styles.featureItem}>
+                  <Package color="#667eea" size={20} />
+                  <Text style={styles.featureText}>Real-time pantry management</Text>
+                </View>
+                
+                <View style={styles.featureItem}>
+                  <Users color="#667eea" size={20} />
+                  <Text style={styles.featureText}>Household collaboration</Text>
+                </View>
+                
+                <View style={styles.featureItem}>
+                  <Activity color="#667eea" size={20} />
+                  <Text style={styles.featureText}>Smart shopping lists</Text>
+                </View>
+              </View>
+              
+              <Text style={styles.featuresSubtext}>
+                Experience all features instantly with the demo account
               </Text>
             </View>
           </View>
@@ -267,9 +286,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#27ae60',
     borderRadius: 12,
     height: 56,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    gap: 8,
   },
   demoButtonText: {
     color: '#ffffff',
@@ -351,29 +372,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  infoContainer: {
+  featuresContainer: {
     marginTop: 24,
-    padding: 16,
+    padding: 20,
     backgroundColor: '#f8f9fa',
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#e1e1e1',
   },
-  infoTitle: {
-    fontSize: 14,
+  featuresTitle: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 16,
+    textAlign: 'center',
   },
-  infoText: {
-    fontSize: 12,
+  featuresList: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  featureText: {
+    fontSize: 14,
     color: '#666',
-    marginBottom: 4,
+    flex: 1,
   },
-  infoSubtext: {
+  featuresSubtext: {
     fontSize: 12,
     color: '#999',
-    marginTop: 8,
+    textAlign: 'center',
     fontStyle: 'italic',
   },
 });

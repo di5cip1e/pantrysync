@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHousehold } from '@/contexts/HouseholdContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { LogOut, TriangleAlert as AlertTriangle, Chrome as Home, User, Building } from 'lucide-react-native';
+import { LogOut, TriangleAlert as AlertTriangle, Chrome as Home, User, Building, ArrowRight } from 'lucide-react-native';
 
 export default function Index() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -20,9 +20,28 @@ export default function Index() {
   const [forceLogoutLoading, setForceLogoutLoading] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [navigationAttempted, setNavigationAttempted] = useState(false);
+  const [autoNavigationTimer, setAutoNavigationTimer] = useState(5);
 
+  // Auto-navigation countdown
   useEffect(() => {
-    // Set debug mode after 3 seconds if still loading
+    if (!authLoading && user && !navigationAttempted) {
+      const timer = setInterval(() => {
+        setAutoNavigationTimer(prev => {
+          if (prev <= 1) {
+            // Auto-navigate when timer reaches 0
+            handleAutoNavigation();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [authLoading, user, navigationAttempted]);
+
+  // Set debug mode after 3 seconds if still loading
+  useEffect(() => {
     const debugTimer = setTimeout(() => {
       if (authLoading || householdLoading) {
         setDebugMode(true);
@@ -32,45 +51,50 @@ export default function Index() {
     return () => clearTimeout(debugTimer);
   }, [authLoading, householdLoading]);
 
+  const handleAutoNavigation = () => {
+    if (navigationAttempted) return;
+    setNavigationAttempted(true);
+    
+    console.log('🔄 Auto Navigation Logic:', {
+      user: !!user,
+      currentHousehold: !!currentHousehold,
+      householdsCount: households.length,
+      hasAttemptedLoad,
+      householdLoading
+    });
+    
+    if (!user) {
+      console.log('🔄 No user, redirecting to auth');
+      router.replace('/auth');
+    } else {
+      // User is authenticated, check household status
+      if (currentHousehold) {
+        // User has a current household - go to app
+        console.log('✅ User has current household, redirecting to app');
+        router.replace('/(tabs)');
+      } else if (hasAttemptedLoad && households.length > 0) {
+        // User has households but no current one selected
+        console.log('🏠 User has households, redirecting to app');
+        router.replace('/(tabs)');
+      } else if (!hasAttemptedLoad && !householdLoading) {
+        // Haven't tried loading households yet, try to load them
+        console.log('🔄 Attempting to load households...');
+        loadHouseholds().catch(() => {
+          // If loading fails, go to setup
+          console.log('🏠 Failed to load households, redirecting to setup');
+          router.replace('/household-setup');
+        });
+      } else if (hasAttemptedLoad && households.length === 0) {
+        // User needs to set up or join a household
+        console.log('🏠 No households found, redirecting to setup');
+        router.replace('/household-setup');
+      }
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && !navigationAttempted) {
-      setNavigationAttempted(true);
-      
-      console.log('🔄 Navigation Logic:', {
-        user: !!user,
-        currentHousehold: !!currentHousehold,
-        householdsCount: households.length,
-        hasAttemptedLoad,
-        householdLoading
-      });
-      
-      if (!user) {
-        console.log('🔄 No user, redirecting to auth');
-        router.replace('/auth');
-      } else {
-        // User is authenticated, check household status
-        if (currentHousehold) {
-          // User has a current household - go to app
-          console.log('✅ User has current household, redirecting to app');
-          router.replace('/(tabs)');
-        } else if (hasAttemptedLoad && households.length > 0) {
-          // User has households but no current one selected
-          console.log('🏠 User has households, redirecting to app');
-          router.replace('/(tabs)');
-        } else if (!hasAttemptedLoad && !householdLoading) {
-          // Haven't tried loading households yet, try to load them
-          console.log('🔄 Attempting to load households...');
-          loadHouseholds().catch(() => {
-            // If loading fails, go to setup
-            console.log('🏠 Failed to load households, redirecting to setup');
-            router.replace('/household-setup');
-          });
-        } else if (hasAttemptedLoad && households.length === 0) {
-          // User needs to set up or join a household
-          console.log('🏠 No households found, redirecting to setup');
-          router.replace('/household-setup');
-        }
-      }
+      handleAutoNavigation();
     }
   }, [user, authLoading, currentHousehold, households, hasAttemptedLoad, householdLoading, navigationAttempted, router, loadHouseholds]);
 
@@ -116,6 +140,16 @@ export default function Index() {
     router.replace('/(tabs)');
   };
 
+  const getStatusMessage = () => {
+    if (authLoading) return 'Authenticating...';
+    if (!user) return 'Please sign in';
+    if (householdLoading) return 'Loading households...';
+    if (currentHousehold) return `Ready! Going to ${currentHousehold.name}`;
+    if (households.length > 0) return 'Ready! Going to app';
+    if (hasAttemptedLoad) return 'Setting up household...';
+    return 'Preparing your account...';
+  };
+
   return (
     <LinearGradient
       colors={['#667eea', '#764ba2']}
@@ -126,20 +160,36 @@ export default function Index() {
         <Text style={styles.title}>PantrySync</Text>
         <Text style={styles.subtitle}>Sync your household essentials</Text>
         
-        {/* Show loading state */}
-        {(authLoading || householdLoading) && !debugMode ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#ffffff" style={styles.loader} />
-            <Text style={styles.loadingText}>
-              {authLoading ? 'Authenticating...' : 'Loading households...'}
-            </Text>
-          </View>
-        ) : null}
+        {/* Main Status */}
+        <View style={styles.statusCard}>
+          <Text style={styles.statusMessage}>{getStatusMessage()}</Text>
+          
+          {/* Auto-navigation countdown */}
+          {user && !navigationAttempted && autoNavigationTimer > 0 && (
+            <View style={styles.countdownContainer}>
+              <Text style={styles.countdownText}>
+                Auto-navigating in {autoNavigationTimer}s
+              </Text>
+              <TouchableOpacity 
+                style={styles.skipButton}
+                onPress={handleAutoNavigation}
+              >
+                <Text style={styles.skipButtonText}>Skip</Text>
+                <ArrowRight color="#667eea" size={16} />
+              </TouchableOpacity>
+            </View>
+          )}
+          
+          {/* Loading indicator */}
+          {(authLoading || householdLoading) && !debugMode && (
+            <ActivityIndicator size="large" color="#667eea" style={styles.loader} />
+          )}
+        </View>
         
-        {/* Show debug/manual navigation options */}
-        {(debugMode || householdError) ? (
+        {/* Debug/manual navigation options */}
+        {(debugMode || householdError || navigationAttempted) && (
           <View style={styles.navigationContainer}>
-            {householdError ? (
+            {householdError && (
               <View style={styles.errorSection}>
                 <AlertTriangle color="#ffffff" size={32} style={styles.errorIcon} />
                 <Text style={styles.errorTitle}>Navigation Help</Text>
@@ -147,16 +197,16 @@ export default function Index() {
                   There was an issue loading your data. Choose where you'd like to go:
                 </Text>
               </View>
-            ) : null}
+            )}
             
-            {debugMode ? (
+            {debugMode && !householdError && (
               <View style={styles.debugSection}>
                 <Text style={styles.debugTitle}>Manual Navigation</Text>
                 <Text style={styles.debugText}>
                   Loading is taking longer than expected. You can navigate manually:
                 </Text>
               </View>
-            ) : null}
+            )}
 
             <View style={styles.actionButtons}>
               <TouchableOpacity
@@ -197,7 +247,7 @@ export default function Index() {
               </TouchableOpacity>
             </View>
           </View>
-        ) : null}
+        )}
 
         {/* Status indicator at bottom */}
         <View style={styles.statusContainer}>
@@ -246,17 +296,49 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 40,
   },
-  loadingContainer: {
+  statusCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 16,
+    padding: 24,
     alignItems: 'center',
-    marginTop: 20,
+    marginBottom: 20,
+    minWidth: 280,
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(10px)',
+    } : {}),
   },
-  loader: {
+  statusMessage: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+    textAlign: 'center',
     marginBottom: 16,
   },
-  loadingText: {
-    fontSize: 16,
+  countdownContainer: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  countdownText: {
+    fontSize: 14,
     color: '#ffffff',
-    opacity: 0.9,
+    opacity: 0.8,
+  },
+  skipButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 8,
+  },
+  skipButtonText: {
+    color: '#667eea',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  loader: {
+    marginTop: 8,
   },
   navigationContainer: {
     alignItems: 'center',
