@@ -17,9 +17,9 @@ import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react-native';
 
 export default function AuthScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('demo@pantrysync.com');
+  const [password, setPassword] = useState('demo123');
+  const [displayName, setDisplayName] = useState('Demo User');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -65,12 +65,29 @@ export default function AuthScreen() {
     }
   };
 
+  const handleDemoLogin = async () => {
+    setEmail('demo@pantrysync.com');
+    setPassword('demo123');
+    setDisplayName('Demo User');
+    setIsSignUp(false);
+    setError('');
+    
+    // Small delay to show the form update
+    setTimeout(() => {
+      handleSubmit();
+    }, 100);
+  };
+
   const switchMode = () => {
     setIsSignUp(!isSignUp);
     setError('');
-    setEmail('');
-    setPassword('');
-    setDisplayName('');
+    // Keep demo credentials when switching modes
+    if (!isSignUp) {
+      // Switching to sign up
+      setEmail('demo@pantrysync.com');
+      setPassword('demo123');
+      setDisplayName('Demo User');
+    }
   };
 
   return (
@@ -88,6 +105,23 @@ export default function AuthScreen() {
           </View>
 
           <View style={styles.form}>
+            {/* Demo Login Button */}
+            <TouchableOpacity
+              style={styles.demoButton}
+              onPress={handleDemoLogin}
+              disabled={loading}
+            >
+              <Text style={styles.demoButtonText}>
+                🚀 Use Demo Account
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
             {isSignUp && (
               <View style={styles.inputContainer}>
                 <User color="#666" size={20} style={styles.inputIcon} />
@@ -166,11 +200,14 @@ export default function AuthScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Demo credentials for testing */}
-            <View style={styles.demoContainer}>
-              <Text style={styles.demoTitle}>Demo Credentials</Text>
-              <Text style={styles.demoText}>Email: demo@pantrysync.com</Text>
-              <Text style={styles.demoText}>Password: demo123</Text>
+            {/* Demo credentials info */}
+            <View style={styles.infoContainer}>
+              <Text style={styles.infoTitle}>Demo Credentials</Text>
+              <Text style={styles.infoText}>Email: demo@pantrysync.com</Text>
+              <Text style={styles.infoText}>Password: demo123</Text>
+              <Text style={styles.infoSubtext}>
+                Use these credentials to explore the app features
+              </Text>
             </View>
           </View>
         </ScrollView>
@@ -211,14 +248,46 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 30,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
+    ...(Platform.OS === 'web' ? {
+      boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.25)',
+    } : {
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 10,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 20,
+      elevation: 10,
+    }),
+  },
+  demoButton: {
+    backgroundColor: '#27ae60',
+    borderRadius: 12,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  demoButtonText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e1e1e1',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: '#666',
+    fontSize: 14,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -280,7 +349,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  demoContainer: {
+  infoContainer: {
     marginTop: 24,
     padding: 16,
     backgroundColor: '#f8f9fa',
@@ -288,15 +357,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e1e1e1',
   },
-  demoTitle: {
+  infoTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
     marginBottom: 8,
   },
-  demoText: {
+  infoText: {
     fontSize: 12,
     color: '#666',
     marginBottom: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  infoSubtext: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
 });

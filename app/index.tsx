@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHousehold } from '@/contexts/HouseholdContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { LogOut, TriangleAlert as AlertTriangle, Chrome as Home } from 'lucide-react-native';
+import { LogOut, TriangleAlert as AlertTriangle, Chrome as Home, User, Building } from 'lucide-react-native';
 
 export default function Index() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -22,12 +22,12 @@ export default function Index() {
   const [navigationAttempted, setNavigationAttempted] = useState(false);
 
   useEffect(() => {
-    // Set debug mode after 5 seconds if still loading
+    // Set debug mode after 3 seconds if still loading
     const debugTimer = setTimeout(() => {
       if (authLoading || householdLoading) {
         setDebugMode(true);
       }
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(debugTimer);
   }, [authLoading, householdLoading]);
@@ -35,6 +35,14 @@ export default function Index() {
   useEffect(() => {
     if (!authLoading && !navigationAttempted) {
       setNavigationAttempted(true);
+      
+      console.log('🔄 Navigation Logic:', {
+        user: !!user,
+        currentHousehold: !!currentHousehold,
+        householdsCount: households.length,
+        hasAttemptedLoad,
+        householdLoading
+      });
       
       if (!user) {
         console.log('🔄 No user, redirecting to auth');
@@ -132,7 +140,7 @@ export default function Index() {
         {(debugMode || householdError) ? (
           <View style={styles.navigationContainer}>
             {householdError ? (
-              <View>
+              <View style={styles.errorSection}>
                 <AlertTriangle color="#ffffff" size={32} style={styles.errorIcon} />
                 <Text style={styles.errorTitle}>Navigation Help</Text>
                 <Text style={styles.errorMessage}>
@@ -142,7 +150,7 @@ export default function Index() {
             ) : null}
             
             {debugMode ? (
-              <View>
+              <View style={styles.debugSection}>
                 <Text style={styles.debugTitle}>Manual Navigation</Text>
                 <Text style={styles.debugText}>
                   Loading is taking longer than expected. You can navigate manually:
@@ -155,6 +163,7 @@ export default function Index() {
                 style={[styles.actionButton, styles.authButton]}
                 onPress={handleGoToAuth}
               >
+                <User color="#ffffff" size={20} />
                 <Text style={styles.actionButtonText}>Go to Login</Text>
               </TouchableOpacity>
 
@@ -162,6 +171,7 @@ export default function Index() {
                 style={[styles.actionButton, styles.setupButton]}
                 onPress={handleGoToSetup}
               >
+                <Building color="#ffffff" size={20} />
                 <Text style={styles.actionButtonText}>Household Setup</Text>
               </TouchableOpacity>
 
@@ -170,6 +180,7 @@ export default function Index() {
                   style={[styles.actionButton, styles.appButton]}
                   onPress={handleGoToApp}
                 >
+                  <Home color="#ffffff" size={20} />
                   <Text style={styles.actionButtonText}>Go to App</Text>
                 </TouchableOpacity>
               )}
@@ -187,6 +198,22 @@ export default function Index() {
             </View>
           </View>
         ) : null}
+
+        {/* Status indicator at bottom */}
+        <View style={styles.statusContainer}>
+          <View style={styles.statusRow}>
+            <Text style={styles.statusLabel}>Auth:</Text>
+            <Text style={[styles.statusValue, { color: user ? '#27ae60' : '#e74c3c' }]}>
+              {authLoading ? 'Loading...' : user ? 'Authenticated' : 'Not authenticated'}
+            </Text>
+          </View>
+          <View style={styles.statusRow}>
+            <Text style={styles.statusLabel}>Household:</Text>
+            <Text style={[styles.statusValue, { color: currentHousehold ? '#27ae60' : '#f39c12' }]}>
+              {householdLoading ? 'Loading...' : currentHousehold ? currentHousehold.name : `${households.length} available`}
+            </Text>
+          </View>
+        </View>
       </View>
     </LinearGradient>
   );
@@ -238,6 +265,13 @@ const styles = StyleSheet.create({
     padding: 24,
     marginTop: 20,
     maxWidth: 350,
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(10px)',
+    } : {}),
+  },
+  errorSection: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
   errorIcon: {
     marginBottom: 16,
@@ -254,8 +288,11 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     opacity: 0.9,
     textAlign: 'center',
-    marginBottom: 24,
     lineHeight: 20,
+  },
+  debugSection: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
   debugTitle: {
     fontSize: 16,
@@ -268,7 +305,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#ffffff',
     opacity: 0.9,
-    marginBottom: 24,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -301,6 +337,34 @@ const styles = StyleSheet.create({
   actionButtonText: {
     color: '#ffffff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  statusContainer: {
+    position: 'absolute',
+    bottom: 40,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(10px)',
+    } : {}),
+  },
+  statusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  statusLabel: {
+    fontSize: 14,
+    color: '#ffffff',
+    opacity: 0.8,
+    fontWeight: '500',
+  },
+  statusValue: {
+    fontSize: 14,
     fontWeight: '600',
   },
 });
