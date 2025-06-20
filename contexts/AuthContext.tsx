@@ -26,11 +26,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔐 Setting up auth state listener...');
+    
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log('🔐 Auth state changed:', firebaseUser ? 'User logged in' : 'User logged out');
+      console.log('🔐 Auth state changed:', firebaseUser ? `User: ${firebaseUser.email}` : 'No user');
       
-      if (firebaseUser) {
-        try {
+      try {
+        if (firebaseUser) {
           // Get user data from Firestore
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           
@@ -68,9 +70,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               updatedAt: new Date(),
             });
           }
-        } catch (error) {
-          console.error('❌ Error getting user document:', error);
-          // Fallback to Firebase Auth data if Firestore fails
+        } else {
+          console.log('👋 User signed out');
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('❌ Error in auth state change:', error);
+        // Fallback to Firebase Auth data if Firestore fails
+        if (firebaseUser) {
           setUser({
             id: firebaseUser.uid,
             email: firebaseUser.email!,
@@ -79,24 +86,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             createdAt: new Date(),
             updatedAt: new Date(),
           });
+        } else {
+          setUser(null);
         }
-      } else {
-        console.log('👋 User signed out');
-        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      console.log('🔐 Cleaning up auth listener');
+      unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('🔑 Attempting to sign in...');
-      await signInWithEmailAndPassword(auth, email, password);
-      console.log('✅ Sign in successful');
+      console.log('🔑 Attempting to sign in with:', email);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      console.log('✅ Sign in successful for:', result.user.email);
     } catch (error: any) {
-      console.error('❌ Sign in error:', error.message);
+      console.error('❌ Sign in error:', error.code, error.message);
       
       // Provide user-friendly error messages
       let userMessage = 'Sign in failed. Please try again.';
@@ -119,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, displayName: string) => {
     try {
-      console.log('📝 Creating new account...');
+      console.log('📝 Creating new account for:', email);
       const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
       
       console.log('👤 Updating Firebase Auth profile...');
@@ -138,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await setDoc(doc(db, 'users', firebaseUser.uid), userData);
       console.log('✅ Account creation complete');
     } catch (error: any) {
-      console.error('❌ Sign up error:', error.message);
+      console.error('❌ Sign up error:', error.code, error.message);
       
       // Provide user-friendly error messages
       let userMessage = 'Account creation failed. Please try again.';
@@ -160,35 +170,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       console.log('👋 Starting sign out process...');
-      
-      // Clear user state immediately to prevent further operations
-      setUser(null);
-      setLoading(false);
-      
-      // Sign out from Firebase (this may throw errors but we'll continue anyway)
-      try {
-        await firebaseSignOut(auth);
-        console.log('✅ Firebase sign out successful');
-      } catch (firebaseError: any) {
-        console.log('⚠️ Firebase sign out error (continuing anyway):', firebaseError.message);
-        // Don't throw - we want to continue with the logout process
-      }
-      
-      // Additional cleanup - clear any localStorage/sessionStorage
-      try {
-        if (typeof window !== 'undefined') {
-          localStorage?.clear();
-          sessionStorage?.clear();
-        }
-      } catch (storageError) {
-        console.log('⚠️ Storage cleanup error (harmless):', storageError);
-      }
-      
-      console.log('✅ Sign out process completed');
+      await firebaseSignOut(auth);
+      console.log('✅ Sign out successful');
     } catch (error: any) {
-      console.error('❌ Sign out error (but state cleared):', error.message);
-      // Even if there are errors, we've cleared the user state
-      // This ensures the UI updates correctly
+      console.error('❌ Sign out error:', error.message);
+      throw new Error(error.message);
     }
   };
 

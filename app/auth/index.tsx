@@ -13,13 +13,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
-import { Mail, Lock, User, Eye, EyeOff, Zap, Package, Users, Activity } from 'lucide-react-native';
+import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react-native';
 
 export default function AuthScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('demo@pantrysync.com');
   const [password, setPassword] = useState('demo123');
-  const [displayName, setDisplayName] = useState('Demo User');
+  const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -51,31 +51,19 @@ export default function AuthScreen() {
 
     try {
       if (isSignUp) {
+        console.log('📝 Attempting sign up...');
         await signUp(email.trim(), password, displayName.trim());
-        // After successful signup, user will be automatically signed in
-        // and redirected by the auth state change in index.tsx
+        console.log('✅ Sign up successful, redirecting...');
       } else {
+        console.log('🔑 Attempting sign in...');
         await signIn(email.trim(), password);
-        // After successful signin, user will be redirected by the auth state change
+        console.log('✅ Sign in successful, redirecting...');
       }
+      
+      // Navigation will be handled by the auth state change in index.tsx
+      router.replace('/');
     } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setEmail('demo@pantrysync.com');
-    setPassword('demo123');
-    setDisplayName('Demo User');
-    setIsSignUp(false);
-    setError('');
-    setLoading(true);
-    
-    try {
-      await signIn('demo@pantrysync.com', 'demo123');
-    } catch (err: any) {
+      console.error('❌ Auth error:', err.message);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -85,13 +73,21 @@ export default function AuthScreen() {
   const switchMode = () => {
     setIsSignUp(!isSignUp);
     setError('');
-    // Keep demo credentials when switching modes
+    // Keep demo credentials when switching to sign in
     if (!isSignUp) {
-      // Switching to sign up
       setEmail('demo@pantrysync.com');
       setPassword('demo123');
-      setDisplayName('Demo User');
+    } else {
+      setEmail('');
+      setPassword('');
     }
+    setDisplayName('');
+  };
+
+  const useDemoCredentials = () => {
+    setEmail('demo@pantrysync.com');
+    setPassword('demo123');
+    setError('');
   };
 
   return (
@@ -109,24 +105,6 @@ export default function AuthScreen() {
           </View>
 
           <View style={styles.form}>
-            {/* Demo Login Button */}
-            <TouchableOpacity
-              style={[styles.demoButton, loading && styles.buttonDisabled]}
-              onPress={handleDemoLogin}
-              disabled={loading}
-            >
-              <Zap color="#ffffff" size={20} />
-              <Text style={styles.demoButtonText}>
-                {loading ? 'Signing in...' : '🚀 Try Demo Account'}
-              </Text>
-            </TouchableOpacity>
-
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
             {isSignUp && (
               <View style={styles.inputContainer}>
                 <User color="#666" size={20} style={styles.inputIcon} />
@@ -205,31 +183,20 @@ export default function AuthScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Features showcase */}
-            <View style={styles.featuresContainer}>
-              <Text style={styles.featuresTitle}>✨ What you'll get</Text>
-              
-              <View style={styles.featuresList}>
-                <View style={styles.featureItem}>
-                  <Package color="#667eea" size={20} />
-                  <Text style={styles.featureText}>Real-time pantry management</Text>
-                </View>
-                
-                <View style={styles.featureItem}>
-                  <Users color="#667eea" size={20} />
-                  <Text style={styles.featureText}>Household collaboration</Text>
-                </View>
-                
-                <View style={styles.featureItem}>
-                  <Activity color="#667eea" size={20} />
-                  <Text style={styles.featureText}>Smart shopping lists</Text>
-                </View>
+            {/* Demo credentials for testing */}
+            {!isSignUp && (
+              <View style={styles.demoContainer}>
+                <Text style={styles.demoTitle}>Demo Account</Text>
+                <TouchableOpacity 
+                  style={styles.demoButton}
+                  onPress={useDemoCredentials}
+                >
+                  <Text style={styles.demoButtonText}>Use Demo Credentials</Text>
+                </TouchableOpacity>
+                <Text style={styles.demoText}>Email: demo@pantrysync.com</Text>
+                <Text style={styles.demoText}>Password: demo123</Text>
               </View>
-              
-              <Text style={styles.featuresSubtext}>
-                Experience all features instantly with the demo account
-              </Text>
-            </View>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -269,48 +236,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 30,
-    ...(Platform.OS === 'web' ? {
-      boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.25)',
-    } : {
-      shadowColor: '#000',
-      shadowOffset: {
-        width: 0,
-        height: 10,
-      },
-      shadowOpacity: 0.25,
-      shadowRadius: 20,
-      elevation: 10,
-    }),
-  },
-  demoButton: {
-    backgroundColor: '#27ae60',
-    borderRadius: 12,
-    height: 56,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    gap: 8,
-  },
-  demoButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e1e1e1',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: '#666',
-    fontSize: 14,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -372,39 +305,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  featuresContainer: {
+  demoContainer: {
     marginTop: 24,
-    padding: 20,
+    padding: 16,
     backgroundColor: '#f8f9fa',
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e1e1e1',
+    alignItems: 'center',
   },
-  featuresTitle: {
-    fontSize: 16,
+  demoTitle: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 16,
-    textAlign: 'center',
+    marginBottom: 12,
   },
-  featuresList: {
-    gap: 12,
-    marginBottom: 16,
+  demoButton: {
+    backgroundColor: '#667eea',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginBottom: 12,
   },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  featureText: {
+  demoButtonText: {
+    color: '#ffffff',
     fontSize: 14,
-    color: '#666',
-    flex: 1,
+    fontWeight: '600',
   },
-  featuresSubtext: {
+  demoText: {
     fontSize: 12,
-    color: '#999',
-    textAlign: 'center',
-    fontStyle: 'italic',
+    color: '#666',
+    marginBottom: 4,
   },
 });

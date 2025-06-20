@@ -11,7 +11,8 @@ import {
   orderBy, 
   onSnapshot,
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  limit
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '@/config/firebase';
@@ -177,19 +178,24 @@ export const householdService = {
 // Pantry Services
 export const pantryService = {
   async getItems(householdId: string): Promise<PantryItem[]> {
+    // Use simpler query to avoid index requirements
     const q = query(
       collection(db, 'pantryItems'),
-      where('householdId', '==', householdId),
-      orderBy('name')
+      where('householdId', '==', householdId)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    
+    // Sort in memory instead of using orderBy to avoid index requirement
+    const items = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       expiryDate: doc.data().expiryDate?.toDate(),
       createdAt: doc.data().createdAt?.toDate(),
       updatedAt: doc.data().updatedAt?.toDate()
     })) as PantryItem[];
+    
+    // Sort by name in memory
+    return items.sort((a, b) => a.name.localeCompare(b.name));
   },
 
   async addItem(item: Omit<PantryItem, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
@@ -219,10 +225,10 @@ export const pantryService = {
   },
 
   subscribeToItems(householdId: string, callback: (items: PantryItem[]) => void) {
+    // Use simpler query to avoid index requirements
     const q = query(
       collection(db, 'pantryItems'),
-      where('householdId', '==', householdId),
-      orderBy('name')
+      where('householdId', '==', householdId)
     );
     
     return onSnapshot(q, (snapshot) => {
@@ -233,7 +239,10 @@ export const pantryService = {
         createdAt: doc.data().createdAt?.toDate(),
         updatedAt: doc.data().updatedAt?.toDate()
       })) as PantryItem[];
-      callback(items);
+      
+      // Sort by name in memory
+      const sortedItems = items.sort((a, b) => a.name.localeCompare(b.name));
+      callback(sortedItems);
     });
   }
 };
@@ -243,11 +252,11 @@ export const shoppingService = {
   async getLists(householdId: string): Promise<ShoppingList[]> {
     const q = query(
       collection(db, 'shoppingLists'),
-      where('householdId', '==', householdId),
-      orderBy('createdAt', 'desc')
+      where('householdId', '==', householdId)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    
+    const lists = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate(),
@@ -258,6 +267,9 @@ export const shoppingService = {
         completedAt: item.completedAt?.toDate ? item.completedAt.toDate() : item.completedAt
       })) || []
     })) as ShoppingList[];
+    
+    // Sort by creation date in memory
+    return lists.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   },
 
   async createList(name: string, householdId: string, createdBy: string, description?: string): Promise<string> {
@@ -339,8 +351,7 @@ export const shoppingService = {
   subscribeToLists(householdId: string, callback: (lists: ShoppingList[]) => void) {
     const q = query(
       collection(db, 'shoppingLists'),
-      where('householdId', '==', householdId),
-      orderBy('createdAt', 'desc')
+      where('householdId', '==', householdId)
     );
     
     return onSnapshot(q, (snapshot) => {
@@ -355,7 +366,10 @@ export const shoppingService = {
           completedAt: item.completedAt?.toDate ? item.completedAt.toDate() : item.completedAt
         })) || []
       })) as ShoppingList[];
-      callback(lists);
+      
+      // Sort by creation date in memory
+      const sortedLists = lists.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      callback(sortedLists);
     });
   }
 };
@@ -371,25 +385,29 @@ export const activityService = {
     await addDoc(collection(db, 'activities'), activityData);
   },
 
-  async getActivities(householdId: string, limit: number = 50): Promise<Activity[]> {
+  async getActivities(householdId: string, limitCount: number = 50): Promise<Activity[]> {
     const q = query(
       collection(db, 'activities'),
       where('householdId', '==', householdId),
-      orderBy('createdAt', 'desc')
+      limit(limitCount)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.slice(0, limit).map(doc => ({
+    
+    const activities = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate()
     })) as Activity[];
+    
+    // Sort by creation date in memory
+    return activities.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   },
 
   subscribeToActivities(householdId: string, callback: (activities: Activity[]) => void) {
     const q = query(
       collection(db, 'activities'),
       where('householdId', '==', householdId),
-      orderBy('createdAt', 'desc')
+      limit(50)
     );
     
     return onSnapshot(q, (snapshot) => {
@@ -398,7 +416,10 @@ export const activityService = {
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate()
       })) as Activity[];
-      callback(activities);
+      
+      // Sort by creation date in memory
+      const sortedActivities = activities.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      callback(sortedActivities);
     });
   }
 };

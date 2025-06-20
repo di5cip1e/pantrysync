@@ -51,20 +51,25 @@ service cloud.firestore {
         resource.data.createdBy == getUserId();
     }
 
-    // Pantry Items collection
+    // Pantry Items collection - simplified rules
     match /pantryItems/{itemId} {
+      // Allow all operations for authenticated users
+      // In a production app, you'd want to check household membership
       allow read, create, update, delete: if isAuthenticated();
     }
 
-    // Shopping Lists collection
+    // Shopping Lists collection - simplified rules
     match /shoppingLists/{listId} {
+      // Allow all operations for authenticated users
+      // In a production app, you'd want to check household membership
       allow read, create, update, delete: if isAuthenticated();
     }
 
-    // Activities collection (read-only for members, write for system)
+    // Activities collection - simplified rules
     match /activities/{activityId} {
-      allow read, create: if isAuthenticated();
+      // Allow read and create for authenticated users
       // Activities are immutable - no updates or deletes allowed
+      allow read, create: if isAuthenticated();
     }
 
     // Deny all other requests
