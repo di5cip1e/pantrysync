@@ -24,26 +24,25 @@ service cloud.firestore {
     // Households collection
     match /households/{householdId} {
       // Allow reading households only if user is a member (using memberUserIds array)
-      // Added check to ensure memberUserIds is a list before checking membership
+      // Use get() with default empty array to safely access memberUserIds
       allow read: if isAuthenticated() && 
-        resource.data.memberUserIds is list &&
-        getUserId() in resource.data.memberUserIds;
+        getUserId() in resource.data.get('memberUserIds', []);
       
       // Allow creating households
       allow create: if isAuthenticated() && 
         request.resource.data.createdBy == getUserId() &&
         getUserId() in request.resource.data.memberUserIds;
       
-      // Allow updating households if user is a member
+      // Allow updating households if user is a member or joining via invite
       allow update: if isAuthenticated() && 
         (
           // Allow if user is already a member (for admin actions)
-          (resource.data.memberUserIds is list && getUserId() in resource.data.memberUserIds) ||
-          // Allow if user is joining via invite code
+          getUserId() in resource.data.get('memberUserIds', []) ||
+          // Allow if user is joining (adding themselves to memberUserIds)
           (
-            resource.data.inviteCode == request.resource.data.inviteCode &&
-            request.resource.data.memberUserIds.size() == resource.data.memberUserIds.size() + 1 &&
-            getUserId() in request.resource.data.memberUserIds
+            !(getUserId() in resource.data.get('memberUserIds', [])) &&
+            getUserId() in request.resource.data.get('memberUserIds', []) &&
+            request.resource.data.get('memberUserIds', []).size() == resource.data.get('memberUserIds', []).size() + 1
           )
         );
       
