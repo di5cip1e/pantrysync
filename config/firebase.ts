@@ -6,13 +6,13 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAJMtmBb1yQ1r6LOwt7ZUQc_y2KH-M-ZqY",
-  authDomain: "pantrysync-app.firebaseapp.com",
-  projectId: "pantrysync-app",
-  storageBucket: "pantrysync-app.firebasestorage.app",
-  messagingSenderId: "1029154109726",
-  appId: "1:1029154109726:web:69effce8987dcd6349b10f",
-  measurementId: "G-HJW6RR5H7D"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "AIzaSyAJMtmBb1yQ1r6LOwt7ZUQc_y2KH-M-ZqY",
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "pantrysync-app.firebaseapp.com",
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "pantrysync-app",
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || "pantrysync-app.firebasestorage.app",
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "1029154109726",
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "1:1029154109726:web:69effce8987dcd6349b10f",
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-HJW6RR5H7D"
 };
 
 // Initialize Firebase
