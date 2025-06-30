@@ -42,8 +42,37 @@ Try the app instantly with our demo account:
 
 1. Clone the repository
 2. Install dependencies: `npm install`
-3. Start the development server: `npm run dev`
-4. Use the demo account or create a new account
+3. **Set up environment variables:**
+   - Copy `.env.example` to `.env`: `cp .env.example .env`
+   - Update `.env` with your Firebase project configuration (see [Environment Setup](#environment-setup) below)
+4. Start the development server: `npm run dev`
+5. Use the demo account or create a new account
+
+### Environment Setup
+
+The app requires Firebase configuration through environment variables for security. Follow these steps:
+
+1. **Create a Firebase project** at [Firebase Console](https://console.firebase.google.com/)
+2. **Enable Authentication** with Email/Password provider
+3. **Create a Firestore database** with the provided security rules
+4. **Copy your Firebase config** from Project Settings > General > Your apps
+5. **Update your `.env` file** with the Firebase configuration values:
+
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit .env with your Firebase project values
+EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+```
+
+⚠️ **Security Note**: Never commit your `.env` file to version control. It's already included in `.gitignore`.
 
 ## Project Structure
 
