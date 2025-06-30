@@ -28,6 +28,22 @@ The deployment process uses the following configuration:
 
 ## Deployment Process
 
+### Pre-deployment Check
+
+Before starting deployment, run the pre-deployment check to validate your setup:
+
+```bash
+npm run pre-deploy:check
+```
+
+This will verify:
+- Node.js version compatibility
+- Package.json configuration
+- Firebase configuration
+- Deployment configuration
+- Git repository status
+- Environment configuration
+
 ### Quick Deployment
 
 Run the complete production deployment workflow:
@@ -49,6 +65,9 @@ This command will:
 You can also run individual steps:
 
 ```bash
+# Run pre-deployment checks
+npm run pre-deploy:check
+
 # Validate deployment security
 npm run validate:deployment
 

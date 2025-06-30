@@ -10,6 +10,7 @@
     "deploy:production": "node scripts/deploy-production.js",
     "validate:deployment": "node scripts/validate-deployment.js",
     "update:metadata": "node scripts/update-build-metadata.js",
+    "pre-deploy:check": "node scripts/pre-deployment-check.js",
     "lint": "expo lint"
   },
   "dependencies": {
