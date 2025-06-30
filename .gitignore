@@ -33,3 +33,15 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# monitoring and logs
+logs/
+*.log
+validation-report.json
+health-check-*.json
+monitoring-*.json
+
+# temporary files
+/tmp/
+temp/
+.tmp/
