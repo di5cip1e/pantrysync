@@ -31,5 +31,18 @@ yarn-error.*
 .env*.local
 .env
 
+# Environment files with secrets (keep templates)
+.env.development.local
+.env.staging.local
+.env.production.local
+.env.test.local
+
+# Deployment and build artifacts
+android-service-account.json
+ios-distribution-certificate.p12
+
 # typescript
 *.tsbuildinfo
+
+# EAS
+.easignore

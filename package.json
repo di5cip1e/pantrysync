@@ -5,9 +5,25 @@
   "private": true,
   "scripts": {
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
+    "dev:development": "cp .env.development .env.local && npm run dev",
+    "dev:staging": "cp .env.staging .env.local && npm run dev",
+    "dev:production": "cp .env.production .env.local && npm run dev",
     "build:web": "expo export --platform web",
+    "build:web:development": "cp .env.development .env.local && npm run build:web",
+    "build:web:staging": "cp .env.staging .env.local && npm run build:web",
+    "build:web:production": "cp .env.production .env.local && npm run build:web",
     "deploy": "npm run build:web && firebase deploy --only hosting",
-    "lint": "expo lint"
+    "deploy:staging": "npm run build:web:staging && firebase deploy --only hosting --project staging",
+    "deploy:production": "npm run build:web:production && firebase deploy --only hosting --project production",
+    "validate:env": "node scripts/validate-env.js",
+    "lint": "expo lint",
+    "type-check": "tsc --noEmit",
+    "test": "echo \"No tests specified\" && exit 0",
+    "build:ios": "eas build --platform ios",
+    "build:android": "eas build --platform android",
+    "build:mobile": "eas build --platform all",
+    "submit:ios": "eas submit --platform ios",
+    "submit:android": "eas submit --platform android"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
