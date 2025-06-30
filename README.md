@@ -42,8 +42,11 @@ Try the app instantly with our demo account:
 
 1. Clone the repository
 2. Install dependencies: `npm install`
-3. Start the development server: `npm run dev`
-4. Use the demo account or create a new account
+3. Set up environment variables:
+   - Copy `.env.example` to `.env`
+   - Update the Firebase configuration values in `.env` with your project settings
+4. Start the development server: `npm run dev`
+5. Use the demo account or create a new account
 
 ## Project Structure
 
