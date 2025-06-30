@@ -8,6 +8,34 @@
 const fs = require('fs');
 const path = require('path');
 
+// Load environment variables from .env.production if it exists
+function loadProductionEnv() {
+  const envPath = path.join(__dirname, '..', '.env.production');
+  
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    const lines = envContent.split('\n');
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      if (trimmedLine && !trimmedLine.startsWith('#')) {
+        const [key, ...valueParts] = trimmedLine.split('=');
+        if (key && valueParts.length > 0) {
+          const value = valueParts.join('=');
+          // Only set if not already set in process.env
+          if (!process.env[key.trim()]) {
+            process.env[key.trim()] = value.trim();
+          }
+        }
+      }
+    }
+    console.log('✅ Loaded environment variables from .env.production');
+  }
+}
+
+// Load production environment variables
+loadProductionEnv();
+
 // Required environment variables for production
 const REQUIRED_ENV_VARS = [
   'EXPO_PUBLIC_FIREBASE_API_KEY',
