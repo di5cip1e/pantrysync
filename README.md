@@ -170,9 +170,11 @@ types/                  # TypeScript type definitions
 
 The app uses Firebase for:
 - **Authentication**: Email/password auth
-- **Firestore**: Real-time database
+- **Firestore**: Real-time database  
 - **Storage**: Image uploads
 - **Security Rules**: Proper data access control
+
+**⚠️ Security Update**: Firebase credentials are now configured via environment variables instead of being hardcoded in the source code. See the Environment Configuration section above for setup instructions.
 
 ## Development
 

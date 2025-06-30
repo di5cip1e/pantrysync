@@ -3,10 +3,10 @@ import { getAuth, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getEnvironmentConfig } from './environment';
 
 // Get Firebase configuration from environment variables
+// This will throw an error if required environment variables are missing
 const envConfig = getEnvironmentConfig();
 const firebaseConfig = envConfig.firebase;
 
@@ -18,11 +18,13 @@ let auth;
 if (Platform.OS === 'web') {
   auth = getAuth(app);
 } else {
-  // For React Native, use basic initialization
-  // Note: AsyncStorage persistence is handled automatically in Firebase v10
-  auth = initializeAuth(app, {
-    // The persistence is handled automatically by Firebase v10
-  });
+  // For React Native, initializeAuth is used only if getAuth hasn't been called
+  try {
+    auth = getAuth(app);
+  } catch {
+    // If getAuth fails, initialize with custom configuration
+    auth = initializeAuth(app);
+  }
 }
 
 // Initialize Firestore
