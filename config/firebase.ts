@@ -20,16 +20,20 @@ if (validation.warnings.length > 0) {
   console.warn('⚠️ Environment warnings:', validation.warnings);
 }
 
-// Firebase configuration from environment variables
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: config.firebase.apiKey,
-  authDomain: config.firebase.authDomain,
-  projectId: config.firebase.projectId,
-  storageBucket: config.firebase.storageBucket,
-  messagingSenderId: config.firebase.messagingSenderId,
-  appId: config.firebase.appId,
-  measurementId: config.firebase.measurementId,
+  apiKey: "AIzaSyAJMtmBb1yQ1r6LOwt7ZUQc_y2KH-M-ZqY",
+  authDomain: "pantrysync-app.firebaseapp.com",
+  databaseURL: "https://pantrysync-app-default-rtdb.firebaseio.com",
+  projectId: "pantrysync-app",
+  storageBucket: "pantrysync-app.firebasestorage.app",
+  messagingSenderId: "1029154109726",
+  appId: "1:1029154109726:web:69effce8987dcd6349b10f",
+  measurementId: "G-HJW6RR5H7D"
 };
+
 
 // Validate required Firebase configuration
 const requiredFirebaseFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
