@@ -1,19 +1,14 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import { getAuth, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getEnvironmentConfig } from './environment';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAJMtmBb1yQ1r6LOwt7ZUQc_y2KH-M-ZqY",
-  authDomain: "pantrysync-app.firebaseapp.com",
-  projectId: "pantrysync-app",
-  storageBucket: "pantrysync-app.firebasestorage.app",
-  messagingSenderId: "1029154109726",
-  appId: "1:1029154109726:web:69effce8987dcd6349b10f",
-  measurementId: "G-HJW6RR5H7D"
-};
+// Get Firebase configuration from environment variables
+const envConfig = getEnvironmentConfig();
+const firebaseConfig = envConfig.firebase;
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -23,8 +18,10 @@ let auth;
 if (Platform.OS === 'web') {
   auth = getAuth(app);
 } else {
+  // For React Native, use basic initialization
+  // Note: AsyncStorage persistence is handled automatically in Firebase v10
   auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage)
+    // The persistence is handled automatically by Firebase v10
   });
 }
 

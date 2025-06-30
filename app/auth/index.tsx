@@ -14,11 +14,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react-native';
+import { getDemoCredentials } from '@/config/environment';
 
 export default function AuthScreen() {
+  const demoCredentials = getDemoCredentials();
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('demo@pantrysync.com');
-  const [password, setPassword] = useState('demo123');
+  const [email, setEmail] = useState(demoCredentials.email);
+  const [password, setPassword] = useState(demoCredentials.password);
   const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -75,8 +77,8 @@ export default function AuthScreen() {
     setError('');
     // Keep demo credentials when switching to sign in
     if (!isSignUp) {
-      setEmail('demo@pantrysync.com');
-      setPassword('demo123');
+      setEmail(demoCredentials.email);
+      setPassword(demoCredentials.password);
     } else {
       setEmail('');
       setPassword('');
@@ -85,8 +87,8 @@ export default function AuthScreen() {
   };
 
   const useDemoCredentials = () => {
-    setEmail('demo@pantrysync.com');
-    setPassword('demo123');
+    setEmail(demoCredentials.email);
+    setPassword(demoCredentials.password);
     setError('');
   };
 
@@ -184,7 +186,7 @@ export default function AuthScreen() {
             </TouchableOpacity>
 
             {/* Demo credentials for testing */}
-            {!isSignUp && (
+            {!isSignUp && demoCredentials.enabled && (
               <View style={styles.demoContainer}>
                 <Text style={styles.demoTitle}>Demo Account</Text>
                 <TouchableOpacity 
@@ -193,8 +195,8 @@ export default function AuthScreen() {
                 >
                   <Text style={styles.demoButtonText}>Use Demo Credentials</Text>
                 </TouchableOpacity>
-                <Text style={styles.demoText}>Email: demo@pantrysync.com</Text>
-                <Text style={styles.demoText}>Password: demo123</Text>
+                <Text style={styles.demoText}>Email: {demoCredentials.email}</Text>
+                <Text style={styles.demoText}>Password: {demoCredentials.password}</Text>
               </View>
             )}
           </View>
