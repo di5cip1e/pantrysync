@@ -4,7 +4,7 @@ config();
 module.exports = {
   expo: {
     name: "PantrySync",
-    slug: "pantrysync",
+    slug: "pantrysync", 
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
@@ -28,7 +28,7 @@ module.exports = {
     },
     web: {
       bundler: "metro",
-      output: "static",
+      output: "single",
       favicon: "./assets/images/favicon.png"
     },
     plugins: [

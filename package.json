@@ -7,7 +7,9 @@
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
     "build:web": "expo export --platform web",
     "deploy": "npm run build:web && firebase deploy --only hosting",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "validate-env": "./scripts/validate-env.sh",
+    "predeploy": "npm run validate-env"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
