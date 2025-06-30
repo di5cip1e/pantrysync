@@ -7,6 +7,10 @@
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
     "build:web": "expo export --platform web",
     "deploy": "npm run build:web && firebase deploy --only hosting",
+    "deploy:production": "node scripts/deploy-production.js",
+    "validate:deployment": "node scripts/validate-deployment.js",
+    "update:metadata": "node scripts/update-build-metadata.js",
+    "pre-deploy:check": "node scripts/pre-deployment-check.js",
     "lint": "expo lint"
   },
   "dependencies": {
