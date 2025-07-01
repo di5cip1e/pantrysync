@@ -1,29 +1,22 @@
-{
-  "deployment": {
-    "timestamp": "2025-06-30T17:16:44.000Z",
-    "user": "di5cip1e",
-    "environment": "production",
-    "version": "1.0.0",
-    "build": "Initial Production Release",
-    "buildNumber": 4,
-    "commitHash": "090bf2c0300390b2b7e7af2983c4df12ba793eb7",
-    "branch": "copilot/fix-cf6a1ff6-f85f-48df-a852-14edc6be70c7",
-    "buildTimestamp": "2025-06-30T17:16:44.000Z",
-    "deploymentStatus": "in progress",
-    "deploymentStartedAt": "2025-06-30T17:16:44.000Z"
-  },
-  "security": {
-    "environmentValidated": true,
-    "apiKeysVerified": true,
-    "accessPermissionsChecked": true,
-    "deploymentAuthorized": true
-  },
-  "metadata": {
-    "platform": "web",
-    "bundler": "metro",
-    "outputType": "static",
-    "hostingProvider": "firebase",
-    "buildTimestamp": "2025-06-30T17:16:44.000Z",
-    "nodeVersion": "v20.19.3"
-  }
-}
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+
+const firebaseConfig = {
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
+};
+
+// Initialize Firebase (keep your initialization code here, unchanged)
+
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+
+export { auth };
+export default app;
