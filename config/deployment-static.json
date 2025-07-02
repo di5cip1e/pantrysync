@@ -1,0 +1,31 @@
+{
+  "deployment": {
+    "environment": "production",
+    "version": "1.0.0",
+    "user": "di5cip1e",
+    "timestamp": null,
+    "build": "web",
+    "buildNumber": 0,
+    "deploymentStatus": "pending",
+    "lastSuccessfulDeployment": null,
+    "deploymentCompletedAt": null,
+    "commitHash": "unknown",
+    "branch": "unknown",
+    "buildTimestamp": null
+  },
+  "security": {
+    "environmentValidated": false,
+    "apiKeysVerified": false,
+    "accessPermissionsChecked": false,
+    "deploymentAuthorized": false
+  },
+  "metadata": {
+    "platform": "web",
+    "nodeVersion": null,
+    "buildTimestamp": null
+  },
+  "firebase": {
+    "projectId": "pantrysync-app",
+    "hostingUrl": "https://pantrysync-app.web.app"
+  }
+}
