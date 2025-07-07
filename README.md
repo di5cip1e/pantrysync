@@ -50,11 +50,14 @@ Try the app instantly with our demo account:
 
 ### Environment Setup
 
-The app requires Firebase configuration through environment variables for security. Follow these steps:
+**IMPORTANT**: The app requires Firebase configuration to function properly. Follow these steps:
 
 1. **Create a Firebase project** at [Firebase Console](https://console.firebase.google.com/)
 2. **Enable Authentication** with Email/Password provider
 3. **Create a Firestore database** with the provided security rules
+4. **Enable Storage** for image uploads
+5. **Deploy Firestore rules** from `firestore.rules`
+6. **Deploy Storage rules** from `storage.rules`
 4. **Copy your Firebase config** from Project Settings > General > Your apps
 5. **Update your `.env` file** with the Firebase configuration values:
 
@@ -72,7 +75,32 @@ EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
 EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
-⚠️ **Security Note**: Never commit your `.env` file to version control. It's already included in `.gitignore`.
+⚠️ **Critical Setup Notes**: 
+- Never commit your `.env` file to version control
+- The app will not work without proper Firebase configuration
+- Use the demo account (demo@pantrysync.com / demo123) only after setting up Firebase
+- Deploy the security rules to Firebase before using the app
+
+### Firebase Setup Commands
+
+After configuring your Firebase project:
+
+```bash
+# Install Firebase CLI if not already installed
+npm install -g firebase-tools
+
+# Login to Firebase
+firebase login
+
+# Initialize Firebase in your project (if not done)
+firebase init
+
+# Deploy Firestore rules
+firebase deploy --only firestore:rules
+
+# Deploy Storage rules  
+firebase deploy --only storage
+```
 
 ## Project Structure
 
