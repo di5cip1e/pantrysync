@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,527 @@ import {
   Plus, 
   Search, 
   ShoppingCart, 
+  Check, 
+  X,
+  User,
+  Calendar
+} from 'lucide-react-native';
+import { useAuth } from '@/contexts/AuthContext';
+import { useHousehold } from '@/contexts/HouseholdContext';
+import { shoppingService } from '@/services/firestore';
+import { ShoppingList } from '@/types';
+
+export default function ShoppingScreen() {
+  const { user } = useAuth();
+  const { currentHousehold } = useHousehold();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedList, setSelectedList] = useState<string>('');
+  const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load shopping lists
+  useEffect(() => {
+    if (!currentHousehold) {
+      setShoppingLists([]);
+      setLoading(false);
+      return;
+    }
+
+    const loadLists = async () => {
+      try {
+        const lists = await shoppingService.getLists(currentHousehold.id);
+        setShoppingLists(lists);
+        if (lists.length > 0 && !selectedList) {
+          setSelectedList(lists[0].id);
+        }
+      } catch (error) {
+        console.error('Error loading shopping lists:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLists();
+  }, [currentHousehold]);
+
+  const currentList = shoppingLists.find(list => list.id === selectedList);
+  const filteredItems = currentList?.items.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  const completedItems = filteredItems.filter(item => item.completed);
+  const pendingItems = filteredItems.filter(item => !item.completed);
+
+  const toggleItemComplete = async (itemId: string) => {
+    if (!currentList) return;
+    
+    try {
+      const item = currentList.items.find(i => i.id === itemId);
+      if (item) {
+        await shoppingService.updateListItem(currentList.id, itemId, {
+          completed: !item.completed,
+          completedBy: !item.completed ? user?.id : undefined,
+          completedAt: !item.completed ? new Date() : undefined
+        });
+        
+        // Refresh lists
+        const updatedLists = await shoppingService.getLists(currentHousehold!.id);
+        setShoppingLists(updatedLists);
+      }
+    } catch (error) {
+      console.error('Error updating item:', error);
+      Alert.alert('Error', 'Failed to update item');
+    }
+  };
+
+  const deleteItem = (itemId: string) => {
+    Alert.alert(
+      'Delete Item',
+      'Are you sure you want to delete this item?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            if (!currentList) return;
+            
+            try {
+              await shoppingService.removeItemFromList(currentList.id, itemId);
+              
+              // Refresh lists
+              const updatedLists = await shoppingService.getLists(currentHousehold!.id);
+              setShoppingLists(updatedLists);
+            } catch (error) {
+              console.error('Error deleting item:', error);
+              Alert.alert('Error', 'Failed to delete item');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  if (!currentHousehold) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient
+          colors={['#667eea', '#764ba2']}
+          style={styles.header}
+        >
+          <Text style={styles.headerTitle}>Shopping Lists</Text>
+          <Text style={styles.headerSubtitle}>No household selected</Text>
+        </LinearGradient>
+        <View style={styles.emptyState}>
+          <ShoppingCart color="#ccc" size={64} />
+          <Text style={styles.emptyStateText}>No household selected</Text>
+          <Text style={styles.emptyStateSubtext}>Join or create a household to get started</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient
+          colors={['#667eea', '#764ba2']}
+          style={styles.header}
+        >
+          <Text style={styles.headerTitle}>Shopping Lists</Text>
+          <Text style={styles.headerSubtitle}>Loading...</Text>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['#667eea', '#764ba2']}
+        style={styles.header}
+      >
+        <Text style={styles.headerTitle}>Shopping Lists</Text>
+        <Text style={styles.headerSubtitle}>
+          {pendingItems.length} items remaining
+        </Text>
+      </LinearGradient>
+
+      <View style={styles.content}>
+        {/* List Selector */}
+        {shoppingLists.length > 0 ? (
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.listsContainer}
+          >
+            {shoppingLists.map((list) => (
+              <TouchableOpacity
+                key={list.id}
+                style={[
+                  styles.listButton,
+                  selectedList === list.id && styles.listButtonActive,
+                ]}
+                onPress={() => setSelectedList(list.id)}
+              >
+                <Text
+                  style={[
+                    styles.listButtonText,
+                    selectedList === list.id && styles.listButtonTextActive,
+                  ]}
+                >
+                  {list.name}
+                </Text>
+                <Text
+                  style={[
+                    styles.listButtonSubtext,
+                    selectedList === list.id && styles.listButtonSubtextActive,
+                  ]}
+                >
+                  {list.items.length} items
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        ) : (
+          <View style={styles.emptyState}>
+            <ShoppingCart color="#ccc" size={64} />
+            <Text style={styles.emptyStateText}>No shopping lists</Text>
+            <Text style={styles.emptyStateSubtext}>Create your first shopping list to get started</Text>
+          </View>
+        )}
+
+        {currentList && (
+          <>
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <Search color="#666" size={20} style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search items..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+
+            {/* Shopping Items */}
+            <ScrollView style={styles.itemsList} showsVerticalScrollIndicator={false}>
+              {/* Pending Items */}
+              {pendingItems.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>To Buy ({pendingItems.length})</Text>
+                  {pendingItems.map((item) => (
+                    <View key={item.id} style={styles.itemCard}>
+                      <TouchableOpacity
+                        style={styles.checkButton}
+                        onPress={() => toggleItemComplete(item.id)}
+                      >
+                        <View style={styles.checkbox} />
+                      </TouchableOpacity>
+                      
+                      <View style={styles.itemInfo}>
+                        <Text style={styles.itemName}>{item.name}</Text>
+                        <View style={styles.itemMeta}>
+                          <Text style={styles.itemQuantity}>
+                            {item.quantity} {item.unit}
+                          </Text>
+                          <Text style={styles.itemCategory}>{item.category}</Text>
+                        </View>
+                        {item.assignedTo && (
+                          <View style={styles.assignedContainer}>
+                            <User color="#667eea" size={12} />
+                            <Text style={styles.assignedText}>{item.assignedTo}</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => deleteItem(item.id)}
+                      >
+                        <X color="#e74c3c" size={20} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Completed Items */}
+              {completedItems.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Completed ({completedItems.length})</Text>
+                  {completedItems.map((item) => (
+                    <View key={item.id} style={[styles.itemCard, styles.completedItemCard]}>
+                      <TouchableOpacity
+                        style={styles.checkButton}
+                        onPress={() => toggleItemComplete(item.id)}
+                      >
+                        <View style={[styles.checkbox, styles.checkboxCompleted]}>
+                          <Check color="#ffffff" size={16} />
+                        </View>
+                      </TouchableOpacity>
+                      
+                      <View style={styles.itemInfo}>
+                        <Text style={[styles.itemName, styles.completedItemName]}>
+                          {item.name}
+                        </Text>
+                        <View style={styles.itemMeta}>
+                          <Text style={[styles.itemQuantity, styles.completedText]}>
+                            {item.quantity} {item.unit}
+                          </Text>
+                          <Text style={[styles.itemCategory, styles.completedText]}>
+                            {item.category}
+                          </Text>
+                        </View>
+                        {item.assignedTo && (
+                          <View style={styles.assignedContainer}>
+                            <User color="#999" size={12} />
+                            <Text style={[styles.assignedText, styles.completedText]}>
+                              {item.assignedTo}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => deleteItem(item.id)}
+                      >
+                        <X color="#ccc" size={20} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <View style={styles.bottomPadding} />
+            </ScrollView>
+          </>
+        )}
+
+        {/* Add Button */}
+        <TouchableOpacity style={styles.addButton}>
+          <Plus color="#ffffff" size={24} />
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#ffffff',
+    opacity: 0.9,
+  },
+  content: {
+    flex: 1,
+    paddingTop: 20,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  listsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  listButton: {
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#e1e1e1',
+    minWidth: 120,
+  },
+  listButtonActive: {
+    backgroundColor: '#667eea',
+    borderColor: '#667eea',
+  },
+  listButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
+  listButtonTextActive: {
+    color: '#ffffff',
+  },
+  listButtonSubtext: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  listButtonSubtextActive: {
+    color: '#ffffff',
+    opacity: 0.9,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    height: 48,
+    fontSize: 16,
+  },
+  itemsList: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  itemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  completedItemCard: {
+    opacity: 0.7,
+  },
+  checkButton: {
+    marginRight: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#667eea',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxCompleted: {
+    backgroundColor: '#667eea',
+  },
+  itemInfo: {
+    flex: 1,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  completedItemName: {
+    textDecorationLine: 'line-through',
+    color: '#999',
+  },
+  itemMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 4,
+  },
+  itemQuantity: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#667eea',
+  },
+  itemCategory: {
+    fontSize: 12,
+    color: '#666',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  completedText: {
+    color: '#999',
+  },
+  assignedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  assignedText: {
+    fontSize: 12,
+    color: '#667eea',
+    fontWeight: '500',
+  },
+  deleteButton: {
+    padding: 8,
+  },
+  bottomPadding: {
+    height: 100,
+  },
+  addButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 56,
+    height: 56,
+    backgroundColor: '#667eea',
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+});
   Check, 
   X,
   User,
