@@ -5,13 +5,13 @@
     "user": "di5cip1e",
     "timestamp": "2025-07-01T00:00:00.000Z",
     "build": "web",
-    "buildNumber": 1,
+    "buildNumber": 2,
     "deploymentStatus": "pending",
     "lastSuccessfulDeployment": null,
     "deploymentCompletedAt": null,
     "commitHash": "unknown",
     "branch": "unknown",
-    "buildTimestamp": null
+    "buildTimestamp": "2025-07-07T22:03:47.325Z"
   },
   "security": {
     "environmentValidated": false,
@@ -21,8 +21,8 @@
   },
   "metadata": {
     "platform": "web",
-    "nodeVersion": null,
-    "buildTimestamp": null
+    "nodeVersion": "v20.19.1",
+    "buildTimestamp": "2025-07-07T22:03:47.326Z"
   },
   "firebase": {
     "projectId": "pantrysync-app",
