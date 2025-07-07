@@ -6,9 +6,9 @@
     "timestamp": "2025-07-01T00:00:00.000Z",
     "build": "web",
     "buildNumber": 2,
-    "deploymentStatus": "pending",
+    "deploymentStatus": "failed",
     "lastSuccessfulDeployment": null,
-    "deploymentCompletedAt": null,
+    "deploymentCompletedAt": "2025-07-07T22:03:54.597Z",
     "commitHash": "unknown",
     "branch": "unknown",
     "buildTimestamp": "2025-07-07T22:03:47.325Z"
