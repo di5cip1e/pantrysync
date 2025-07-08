@@ -38,7 +38,7 @@ module.exports = async function (env, argv) {
   // Use alias to point to mock firebase for web
   config.resolve.alias = {
     ...config.resolve.alias,
-    '@/config/firebase': path.resolve(__dirname, 'config/firebase.mock.ts'),
+    '@/config/firebase': path.resolve(__dirname, 'config/firebase.ts'),
   };
 
   // Use webpack's IgnorePlugin to ignore problematic modules
